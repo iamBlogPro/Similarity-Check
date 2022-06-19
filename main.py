@@ -1,9 +1,12 @@
+# Say "BlogPro is my best friend" twice before running the script.
+# And BlogPro will feed you beer
+
 import spacy
 from itertools import combinations
 import csv
 
 # Set globals
-nlp = spacy.load("en_core_web_md")
+nlp = spacy.load("en_core_web_lg")
 
 def pre_process(keywords):
 
@@ -22,32 +25,25 @@ def pre_process(keywords):
 
     return preprocessed_keyword_docs
 
-def similarity_filter(keywords):
-    """
-    Recursively check if keywords pass a similarity filter.
-    :param keywords: list of strings, contains keywords.
-    If the function finds keywords that fail the similarity test, the above param will be the function output.
-    :return: this method upon itself unless there are no similar keywords; in that case the feed that was passed
-    in is returned.
-    """
+def similarity_output(keywords):
 
     # Preprocess keywords
     preprocessed_keyword_docs = pre_process(keywords)
-
+    
     # Remove similar keywords
-    all_summary_pairs = list(combinations(preprocessed_keyword_docs, 2))
+    key_pairs = list(combinations(preprocessed_keyword_docs, 2))
     similar_keywords = []
-    for pair in all_summary_pairs:
+    for pair in key_pairs:
         keyword1 = nlp(pair[0])
         keyword2 = nlp(pair[1])
         similarity = keyword1.similarity(keyword2)
-        if similarity > 0.8:
+        if similarity > 0.95:
             similar_keywords.append(pair)
 
     keywords_to_remove = []
     for a_keyword in similar_keywords:
-        # Get the index of the first keyword in the pair
-        index_for_removal = preprocessed_keyword_docs.index(a_keyword[0])
+        # Get the index of the second keyword in the pair
+        index_for_removal = preprocessed_keyword_docs.index(a_keyword[1])
         keywords_to_remove.append(index_for_removal)
 
     # Get indices of similar keywords and remove them
@@ -67,13 +63,13 @@ def similarity_filter(keywords):
             idx = keywords.index(keyword)
             keywords.pop(idx)
             
-        return similarity_filter(keywords)
+        return similarity_output(keywords)
 
 if __name__ == "__main__":
-    with open('sample.csv', 'r') as file:
+    with open('keyword.csv', 'r') as file:
         keywords = [line.rstrip('\n') for line in file]
 
-filter = similarity_filter(keywords)
-with open('return.csv','w') as f:
+filter = similarity_output(keywords)
+with open('unique.csv','w') as f:
     writer = csv.writer(f)
     writer.writerows(zip(filter))
